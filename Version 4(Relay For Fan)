@@ -1,0 +1,55 @@
+#define sensorPower 7
+#define sensorPin A7
+
+#include "dht.h"
+#define dht_apin A1
+
+dht DHT;
+
+const int RELAY_PIN = 3;
+const int RELAY_PIN_2 = 2;
+
+void setup() {
+  pinMode(sensorPower, OUTPUT);
+  digitalWrite(sensorPower, LOW);
+
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, LOW);
+
+  pinMode(RELAY_PIN_2, OUTPUT);
+  digitalWrite(RELAY_PIN_2, LOW);
+
+  Serial.begin(9600);
+}
+void loop() {
+  Serial.print("Soil Moisture: ");
+  Serial.println(readSensor());
+
+  if (readSensor() > 1000) {
+    digitalWrite(RELAY_PIN, HIGH);
+  } else {
+    digitalWrite(RELAY_PIN, LOW);
+  }
+  delay(5000);
+
+  DHT.read11(dht_apin);
+
+  Serial.print("Current humidity = ");
+  Serial.print(DHT.humidity);
+  Serial.print("%  ");
+  Serial.print("Temperature = ");
+  Serial.print(DHT.temperature);
+  Serial.println("C  ");
+
+  if (DHT.temperature > 21) {
+    digitalWrite(RELAY_PIN_2, HIGH);
+  } else{
+    digitalWrite(RELAY_PIN_2, LOW);
+  }
+}
+int readSensor() {
+  digitalWrite(sensorPower, HIGH);
+  int val = analogRead(sensorPin);
+  digitalWrite(sensorPower, LOW);
+  return val;
+}
