@@ -1,0 +1,89 @@
+#define sensorPower 7
+#define sensorPin A7
+
+#include "dht.h"
+#define dht_apin A1
+dht DHT;
+
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+const int RELAY_PIN = 3;
+const int RELAY_PIN_2 = 2;
+const int RELAY_PIN_3 = 4;
+
+void setup() {
+  pinMode(sensorPower, OUTPUT);
+  digitalWrite(sensorPower, LOW);
+
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, LOW);
+
+  pinMode(RELAY_PIN_2, OUTPUT);
+  digitalWrite(RELAY_PIN_2, LOW);
+
+  pinMode(RELAY_PIN_3, OUTPUT);
+  digitalWrite(RELAY_PIN_3, LOW);
+
+  lcd.init();
+  lcd.clear();
+  lcd.backlight();
+
+  lcd.setCursor(0, 0);
+  lcd.print("T=");
+
+  lcd.setCursor(2, 1);
+  lcd.print("Humid=");
+
+  lcd.setCursor(8, 0);
+  lcd.print("SM=");
+
+  Serial.begin(9600);
+}
+void loop() {
+  lcd.setCursor(11, 0);
+  lcd.print(readSensor());
+  lcd.print("%");
+  Serial.print("Soil Moisture: ");
+  Serial.println(readSensor());
+
+  if (readSensor() > 1000) {
+    digitalWrite(RELAY_PIN, HIGH);
+  } else {
+    digitalWrite(RELAY_PIN, LOW);
+  }
+  delay(5000);
+
+  DHT.read11(dht_apin);
+
+  lcd.setCursor(8, 1);
+  lcd.print(DHT.humidity);
+  Serial.print("Current humidity = ");
+  Serial.print(DHT.humidity);
+  Serial.print("%  ");
+  lcd.print("%");
+
+  lcd.setCursor(2, 0);
+  lcd.print(DHT.temperature);
+  Serial.print("Temperature = ");
+  Serial.print(DHT.temperature);
+  lcd.print("C");
+  Serial.println("C  ");
+
+  if (DHT.temperature > 25) {
+    digitalWrite(RELAY_PIN_2, HIGH);
+  } else {
+    digitalWrite(RELAY_PIN_2, LOW);
+  }
+  if (DHT.temperature < 21) {
+    digitalWrite(RELAY_PIN_3, HIGH);
+  } else {
+    digitalWrite(RELAY_PIN_3, LOW);
+  }
+}
+int readSensor() {
+  digitalWrite(sensorPower, HIGH);
+  int val = analogRead(sensorPin);
+  digitalWrite(sensorPower, LOW);
+  return val;
+}
