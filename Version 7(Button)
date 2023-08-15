@@ -1,0 +1,109 @@
+#define sensorPower 7
+#define sensorPin A7
+
+#include "dht.h"
+#define dht_apin A1
+dht DHT;
+
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+const int BUTTON_ONE = 2;
+const int RELAY_PIN = 3;
+const int RELAY_PIN_2 = 4;
+const int RELAY_PIN_3 = 5;
+
+void setup() {
+  pinMode(sensorPower, OUTPUT);
+  digitalWrite(sensorPower, LOW);
+
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, LOW);
+
+  pinMode(RELAY_PIN_2, OUTPUT);
+  digitalWrite(RELAY_PIN_2, LOW);
+
+  pinMode(RELAY_PIN_3, OUTPUT);
+  digitalWrite(RELAY_PIN_3, LOW);
+
+  pinMode(BUTTON_ONE, INPUT_PULLUP);
+
+  Serial.begin(9600);
+
+  lcd.init();
+  lcd.clear();
+
+  lcd.setCursor(8, 0);
+  lcd.print("SM=");
+
+  lcd.setCursor(2, 1);
+  lcd.print("Humid=");
+
+  lcd.setCursor(0, 0);
+  lcd.print("T=");
+}
+void loop() {
+  lcd.setCursor(11, 0);
+  lcd.print(readSensor());
+  lcd.print("%");
+
+  Serial.print("Soil Moisture: ");
+  Serial.println(readSensor());
+
+  if (readSensor() > 950) {
+    digitalWrite(RELAY_PIN, HIGH);
+  } else {
+    digitalWrite(RELAY_PIN, LOW);
+  }
+
+  DHT.read11(dht_apin);
+
+  lcd.setCursor(8, 1);
+  lcd.print(DHT.humidity);
+  lcd.print("%");
+
+  Serial.print("Current humidity = ");
+  Serial.print(DHT.humidity);
+  Serial.print("%  ");
+
+  lcd.setCursor(2, 0);
+  lcd.print(DHT.temperature);
+  lcd.print("C");
+
+  Serial.print("Temperature = ");
+  Serial.print(DHT.temperature);
+  Serial.println("C  ");
+
+  if (DHT.temperature > 25) {
+    digitalWrite(RELAY_PIN_2, HIGH);
+  } else {
+    digitalWrite(RELAY_PIN_2, LOW);
+  }
+  if (DHT.temperature < 21) {
+    digitalWrite(RELAY_PIN_3, HIGH);
+  } else {
+    digitalWrite(RELAY_PIN_3, LOW);
+  }
+  if (BUTTONPRESSED()) {
+    lcd.display();
+    lcd.backlight();
+    delay(5000);
+  } else {
+    lcd.noDisplay();
+    lcd.noBacklight();
+  }
+}
+bool BUTTONPRESSED() {
+  int buttonState = digitalRead(BUTTON_ONE);
+  if (buttonState == 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+int readSensor() {
+  digitalWrite(sensorPower, HIGH);
+  int val = analogRead(sensorPin);
+  digitalWrite(sensorPower, LOW);
+  return val;
+}
