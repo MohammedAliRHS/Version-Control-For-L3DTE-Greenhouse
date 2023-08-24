@@ -1,5 +1,5 @@
-#define sensorPower 7
-#define sensorPin A7
+#define sensorPower 6
+#define sensorPin A6
 
 #include "dht.h"
 #define dht_apin A1
@@ -9,9 +9,9 @@ dht DHT;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 const int BUTTON_ONE = 2;
-const int RELAY_PIN = 3;
-const int RELAY_PIN_2 = 4;
-const int RELAY_PIN_3 = 5;
+const int RELAY_PIN = 5;
+const int RELAY_PIN_2 = 3;
+const int RELAY_PIN_3 = 4;
 int screenState;
 
 void setup() {
@@ -37,7 +37,7 @@ void setup() {
   lcd.clear();
 
   lcd.setCursor(8, 0);
-  lcd.print("SM=");
+  lcd.print("S=");
 
   lcd.setCursor(2, 1);
   lcd.print("Humid=");
@@ -48,7 +48,7 @@ void setup() {
 void loop() {
   lcd.setCursor(11, 0);
   lcd.print(readSensor());
-  lcd.print("%");
+  lcd.print("% ");
 
   Serial.print("Soil Moisture: ");
   Serial.println(readSensor());
