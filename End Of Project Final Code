@@ -1,0 +1,139 @@
+#include "dht.h"                 // Include the DHT sensor library
+dht DHT;                         // Create an instance of the DHT sensor
+
+#include <LiquidCrystal_I2C.h>   // Include the LCD library for I2C communication
+LiquidCrystal_I2C lcd(0x27, 16, 2); // Create an LCD object with I2C address 0x27, 16 columns, and 2 rows
+
+// Define pin constants
+const int SOIL_SENSOR = A6;               // Analog pin for soil moisture sensor
+const int DHT_SENSOR = A1;                // Analog pin for DHT temperature and humidity sensor
+const int BUTTON_ONE = 2;                 // Digital pin for a push button
+const int WATER_PUMP_RELAY = 5;           // Digital pin for water pump relay
+const int FAN_RELAY = 3;                  // Digital pin for fan relay
+const int HEATER_RELAY = 4;               // Digital pin for heater relay
+
+// Temperature thresholds
+const int FAN_THRESHOLD_TEMPERATURE = 25;   // Temperature threshold for turning on the fan relay
+const int HEATER_THRESHOLD_TEMPERATURE = 21; // Temperature threshold for turning on the heater relay
+const int WATER_PUMP_THRESHOLD = 950;
+
+int screenState;                 // Variable to store the LCD screen state
+int moisturePercentage;          // Variable to store soil moisture percentage
+int temperature;                 // Variable to store temperature in Celsius
+int humidity;                    // Variable to store humidity percentage
+
+void setup() {
+  // Initialize pins
+  pinMode(SOIL_SENSOR, OUTPUT);
+  digitalWrite(SOIL_SENSOR, LOW);
+  pinMode(WATER_PUMP_RELAY, OUTPUT);
+  digitalWrite(WATER_PUMP_RELAY, LOW);
+  pinMode(FAN_RELAY, OUTPUT);
+  digitalWrite(FAN_RELAY, LOW);
+  pinMode(HEATER_RELAY, OUTPUT);
+  digitalWrite(HEATER_RELAY, LOW);
+  pinMode(BUTTON_ONE, INPUT_PULLUP);
+
+  // Attach an interrupt to the push button to toggle the LCD display
+  attachInterrupt(digitalPinToInterrupt(BUTTON_ONE), ToggleLcd, RISING);
+
+  // Initialize serial communication
+  Serial.begin(9600);
+
+  // Initialize LCD
+  lcd.init();
+  lcd.clear();
+
+  // Set up the initial LCD display
+  lcd.setCursor(9, 0);
+  lcd.print("SM=");    // Display "Soil Moisture="
+  lcd.setCursor(3, 1);
+  lcd.print("Humid=");  // Display "Humidity="
+  lcd.setCursor(0, 0);
+  lcd.print("Temp=");   // Display "Temperature="
+}
+
+void loop() {
+  // Read soil moisture
+  moisturePercentage = (readSensor() / 10);  // Read and calculate soil moisture percentage
+  lcd.setCursor(12, 0);
+  lcd.print(moisturePercentage);  // Display soil moisture percentage on the LCD
+  lcd.print("% ");
+  Serial.print("Soil Moisture: ");  // Print soil moisture information to the serial monitor
+  Serial.print(moisturePercentage);
+  Serial.print("% ");
+
+  // Control the water pump based on soil moisture
+  if (readSensor() > WATER_PUMP_THRESHOLD) {
+    digitalWrite(WATER_PUMP_RELAY, HIGH); // Turn on the water pump relay
+  } else {
+    digitalWrite(WATER_PUMP_RELAY, LOW);  // Turn off the water pump relay
+  }
+
+  // Read temperature and humidity from the DHT sensor
+  DHT.read11(DHT_SENSOR);
+  temperature = (DHT.temperature); // Store temperature in Celsius
+  humidity = (DHT.humidity);       // Store humidity percentage
+
+  // Display humidity on the LCD
+  lcd.setCursor(9, 1);
+  lcd.print(humidity);
+  lcd.print("%");
+ // Print humidity information to the serial monitor 
+  Serial.print("Current humidity = ");
+  Serial.print(humidity);
+  Serial.print("%  ");
+
+  // Display temperature on the LCD
+  lcd.setCursor(5, 0);
+  lcd.print(temperature);
+  lcd.print("C ");
+  // Print temperature information to the serial monitor
+  Serial.print("Temperature = ");
+  Serial.print(temperature);
+  Serial.println("C  ");
+
+  // Control the fan based on temperature
+    if (DHT.temperature > FAN_THRESHOLD_TEMPERATURE) { // If temperature is above a threshold, turn on the fan relay
+    digitalWrite(FAN_RELAY, HIGH); 
+  } else {
+    digitalWrite(FAN_RELAY, LOW); // Otherwise, turn off the fan relay
+  }
+  // Control the heater based on temperature
+ if (DHT.temperature < HEATER_THRESHOLD_TEMPERATURE) { // If temperature is below a threshold, turn on the heater relay
+    digitalWrite(HEATER_RELAY, HIGH); 
+  } else {
+    digitalWrite(HEATER_RELAY, LOW); // Otherwise, turn off the heater relay
+  }
+  // Toggle the LCD display based on button press
+  if (ButtonPressed()) {
+    lcd.display();      // Turn on the LCD display and LCD backlight
+    lcd.backlight();    
+    delay(10000);       // Display the LCD for 10 seconds
+  } else {
+    lcd.noDisplay();    // Turn off the LCD display and LCD backlight
+    lcd.noBacklight();
+  }
+}
+
+bool ButtonPressed() {
+  int buttonState = digitalRead(BUTTON_ONE); // Read the state of the push button
+  if (buttonState == LOW) { // If the push button is pressed (LOW), return true
+    return true;
+  } else {
+    return false; // If the push button is not pressed (HIGH), return false
+  }
+}
+
+int readSensor() {
+  // Read soil moisture sensor
+  digitalWrite(SOIL_SENSOR, HIGH); // Turn on the soil moisture sensor
+  int val = analogRead(SOIL_SENSOR); // Read the analog value from the sensor
+  digitalWrite(SOIL_SENSOR, LOW);  // Turn off the soil moisture sensor
+  return val; // Return the analog value
+}
+
+void ToggleLcd() {
+  // Toggle the LCD screen state
+  screenState = !screenState;
+}
