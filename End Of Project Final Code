@@ -17,7 +17,7 @@ const int FAN_THRESHOLD_TEMPERATURE = 25;   // Temperature threshold for turning
 const int HEATER_THRESHOLD_TEMPERATURE = 21; // Temperature threshold for turning on the heater relay
 const int WATER_PUMP_THRESHOLD = 950;
 
-int screenState;                 // Variable to store the LCD screen state
+int screenState = false;                 // Variable to store the LCD screen state
 int moisturePercentage;          // Variable to store soil moisture percentage
 int temperature;                 // Variable to store temperature in Celsius
 int humidity;                    // Variable to store humidity percentage
@@ -106,22 +106,12 @@ void loop() {
     digitalWrite(HEATER_RELAY, LOW); // Otherwise, turn off the heater relay
   }
   // Toggle the LCD display based on button press
-  if (ButtonPressed()) {
+  if (screenState = true) {
     lcd.display();      // Turn on the LCD display and LCD backlight
-    lcd.backlight();    
-    delay(10000);       // Display the LCD for 10 seconds
+    lcd.backlight();
   } else {
     lcd.noDisplay();    // Turn off the LCD display and LCD backlight
     lcd.noBacklight();
-  }
-}
-
-bool ButtonPressed() {
-  int buttonState = digitalRead(BUTTON_ONE); // Read the state of the push button
-  if (buttonState == LOW) { // If the push button is pressed (LOW), return true
-    return true;
-  } else {
-    return false; // If the push button is not pressed (HIGH), return false
   }
 }
 
